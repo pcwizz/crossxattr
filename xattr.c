@@ -288,9 +288,6 @@ ssize_t listAttrs( const char* path, void* data, size_t nbytes ) {
 
     checkReturnValue( "listAttrs", listxattrRet);
 
-    if ( listxattrRet < 1 )
-        errExit( "listxattrRet < 1" );
-
     ssize_t numEntries = numCharInStr( '.', data, listxattrRet );
 
     // remove non-user namespace list items and remove the namespace name
