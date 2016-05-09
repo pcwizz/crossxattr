@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define LISTATTRSBUF_SIZE 128
 #define TEST_FILE "testFile"
-#define TEST_ATTR_NAME "ctest_testing_attr"
+#define TEST_ATTR_NAME "ctest_testing"
 #define TEST_ATTR_VAL "testing"
 
 // function definitions inside the source file because they are not intended to be used externally
@@ -35,6 +35,7 @@ void setattr_testattr();// attempt to add the test attr
 ssize_t setattr_create();// attempt to create an attribute and check that an attribute has been created
 ssize_t getattr_value();// compare attr value received with attr value set
 ssize_t deleteattr_numattr();// delete an attr and check the attr is deleted
+ssize_t setattr_name();//Check the name of the attribute matches what we put in
 
 int main( void ) {
 
@@ -73,6 +74,13 @@ int main( void ) {
 	} else {
 		passed++;
 	}
+
+    run++;
+    if ( setattr_name() == EXIT_FAILURE ) {
+        fprintf( stdout, "test: attr name was not set or was not read correctly\n");
+    } else {
+        passed++;
+    }
 
 	fprintf( stdout, "%i%% of tests passed\n", (passed / run) * 100 );
 
@@ -139,6 +147,35 @@ ssize_t setattr_create() {
 	deleteAttr( TEST_FILE, TEST_ATTR_NAME );
 
 	return EXIT_SUCCESS;
+}
+
+ssize_t setattr_name() {
+    void* data = malloc( LISTATTRSBUF_SIZE );
+	
+    if ( data == NULL ) {
+        errExit( "test: malloc listAttrs buffer" );
+    }
+
+    // pad data with NULL to make valgrind happy
+    for ( size_t i = 0; i < LISTATTRSBUF_SIZE; i++ ){
+        ((char*) data)[i] = '\0';
+	}
+
+    setattr_testattr();
+
+    listAttrs( TEST_FILE, data, LISTATTRSBUF_SIZE );
+ 
+    ssize_t ret = EXIT_FAILURE;
+    if ( strcmp( TEST_ATTR_NAME, (char*) data ) == 0 )
+        ret = EXIT_SUCCESS;
+
+    // tidy up our allocation before we exit the function
+    free( data );
+	data = NULL;
+	deleteAttr( TEST_FILE, TEST_ATTR_NAME );
+
+	return ret;
+
 }
 
 ssize_t getattr_value() {

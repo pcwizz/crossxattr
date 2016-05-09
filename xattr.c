@@ -148,7 +148,7 @@ ssize_t listAttrs( const char* path, void* data, size_t nbytes ) {
 
 void checkReturnValue( const char* callerName, ssize_t ret ) {
 
-    if ( ret >= 0 ) {
+    if ( ret != -1 ) {
         return;
 	}
 
@@ -179,6 +179,14 @@ void checkReturnValue( const char* callerName, ssize_t ret ) {
 	case EACCES:
 		snprintfRet = snprintf( errStr, ERR_STR_SIZE, "EACCES in %s", callerName );
 	break;
+    
+    case EFAULT:
+		snprintfRet = snprintf( errStr, ERR_STR_SIZE, "EFAULT in %s", callerName );
+	break;
+
+    case ENOENT:
+		snprintfRet = snprintf( errStr, ERR_STR_SIZE, "ENOENT in %s", callerName );
+	break;
 
 	default:
 		snprintfRet = snprintf( errStr, ERR_STR_SIZE, "Unknown error %i in %s", errno, callerName);
@@ -195,11 +203,12 @@ char* addNamespacePrefix( const char* str ) {
     // adds "user." to the beginning of the name to specify the namespace
     
     // strlen( "user." ) == 5
-    char* ret = ( char* ) malloc( strlen( str ) + 5 );
+    // +1 for null = 6
+    char* ret = ( char* ) malloc( strlen( str ) + 6 );
     if ( ret == NULL )
         errExit( "allocating namespace prefix memory" );
 
-    int snprintfRet = snprintf( ret, strlen( str ) + 5 , "user.%s", str );
+    int snprintfRet = snprintf( ret, strlen( str ) + 6 , "user.%s", str );
     if ( snprintfRet < 0 )
         errExit( "snprintf in addNamespacePrefix" );
 
@@ -303,7 +312,7 @@ ssize_t listAttrs( const char* path, void* data, size_t nbytes ) {
     usefulBits[0] = seekToInterestingPart( (char*) data, &numEntriesRemaining );
     for ( ssize_t i = 1; i < numEntries; i++ ) { // don't do this too many times
         // returns NULL if we have run out
-        usefulBits[i] = seekToInterestingPart( usefulBits[i-1] + strlen(usefulBits[i-1]) + 1, &numEntriesRemaining );
+        usefulBits[i] = seekToInterestingPart( usefulBits[i-1] + strlen(usefulBits[i-1]) + 6, &numEntriesRemaining );
     }
 
     // work out how many entries we have
@@ -328,7 +337,6 @@ ssize_t listAttrs( const char* path, void* data, size_t nbytes ) {
         strcpy( currPos, usefulBits[i] );
         currPos += ( size + 2 );
     }
-        
     free( usefulBits );
     return numInterestingEntries;
 }
